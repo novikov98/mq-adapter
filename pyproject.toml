@@ -6,10 +6,18 @@ authors = [
     {name = "Artur",email = "a.novikov@medsyst.ru"}
 ]
 readme = "README.md"
-requires-python = ">=3.13"
-dependencies = [
-]
 
+[[tool.poetry.source]]
+name = "bx-client"
+url = "https://gitlab.medsyst.tech/api/v4/projects/5/packages/pypi/simple"
+
+[tool.poetry.dependencies]
+python = ">=3.13,<4.0"
+aio-pika = ">=9.5.8,<10.0.0"
+uvicorn = ">=0.38.0,<0.39.0"
+pydantic = ">=2.12.4,<3.0.0"
+pydantic-settings = ">=2.12.0,<3.0.0"
+bx-client = { version = "^0.1.1", source = "bx-client" }
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
