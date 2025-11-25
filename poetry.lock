@@ -165,14 +165,14 @@ reference = "bx-client"
 
 [[package]]
 name = "bx-client"
-version = "0.1.2"
+version = "0.2.2"
 description = "Клиент для взаимодействя с REST API Битрикс24."
 optional = false
 python-versions = ">=3.13"
 groups = ["main"]
 files = [
-    {file = "bx_client-0.1.2-py3-none-any.whl", hash = "sha256:22cfe3f6c33a4ab779b81d70834df31e6a535d90864284f6edd02411a946de15"},
-    {file = "bx_client-0.1.2.tar.gz", hash = "sha256:77e88c2e19f3617aded4200b14bffb0d47a0691c581c4db3412b1874bdc36862"},
+    {file = "bx_client-0.2.2-py3-none-any.whl", hash = "sha256:4b2bf8e2496ac842ebb6fb97c416927859387a427460c50c2b43ac845a0bbc09"},
+    {file = "bx_client-0.2.2.tar.gz", hash = "sha256:dcbc9c209f6ea4734d9ac33d7eef01fce7fa43c61cc4153eb94ae3f144f83631"},
 ]
 
 [package.dependencies]
@@ -1578,4 +1578,4 @@ reference = "bx-client"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<4.0"
-content-hash = "5aa27ba5e2363431d48ef8e2f2096e14ac727bb7e62a4325c3301c824ebbbf87"
+content-hash = "b4b29c7356dc1afeebf3da6f0e6e30e45d722f4ca90b9be31f60917c968dff74"

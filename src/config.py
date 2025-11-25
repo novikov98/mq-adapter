@@ -76,6 +76,8 @@ class BitrixClientConfig(BaseConfig):
     BX_BATCH_SIZE: int = 50
     BX_OPERATING_TIME_LIMIT: int
     BX_MAX_REQUEST_RETRIES: int
+    BX_WEBHOOK_OWNER_ID: int
+    BX_REQUEST_SSL_CONTROL: bool = True
 
 
 class Config(BaseModel):

@@ -26,15 +26,18 @@ async def lifespan():
     # Перед отключением
 
 
-@lifespan
 async def main():
     """
     Точка входа приложения.
     """
 
-    foo = await BitrixClient.health_chek()
-    print(foo)
+    await BitrixClient.health_chek()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+
+    async def app():
+        async with lifespan():
+            await main()
+
+    asyncio.run(app())
