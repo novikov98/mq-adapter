@@ -3,6 +3,7 @@ from logging import getLogger
 from contextlib import asynccontextmanager
 
 from config import config
+from core.bitrix import BitrixClient
 
 
 config.log_config.setup_logging()
@@ -18,7 +19,7 @@ async def lifespan():
     - Корректное отключение
     """
 
-    # Перед запуском
+    await BitrixClient.init()
 
     yield
 
@@ -31,7 +32,8 @@ async def main():
     Точка входа приложения.
     """
 
-    ...
+    foo = await BitrixClient.health_chek()
+    print(foo)
 
 
 if __name__ == "__main__":

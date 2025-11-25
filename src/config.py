@@ -64,12 +64,27 @@ class LoggConfig(BaseConfig):
         dictConfig(self.logging_config)
 
 
+class BitrixClientConfig(BaseConfig):
+    """
+    Настройки клиента Б24.
+    """
+
+    BX_WEBHOOK: str
+    BX_RESPECT_VELOCITY_POLICY: bool = True
+    BX_REQUEST_POOL_SIZE: int
+    BX_REQUEST_PER_SECOND: float
+    BX_BATCH_SIZE: int = 50
+    BX_OPERATING_TIME_LIMIT: int
+    BX_MAX_REQUEST_RETRIES: int
+
+
 class Config(BaseModel):
     """
     Общий конфиг.
     """
 
     log_config: LoggConfig = LoggConfig()
+    bx_config: BitrixClientConfig = BitrixClientConfig()
 
 
 config = Config()
