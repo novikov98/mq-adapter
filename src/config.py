@@ -89,6 +89,18 @@ class BitrixClientConfig(BaseConfig):
     BX_REQUEST_SSL_CONTROL: bool = True
 
 
+class RabbitClientConfig(BaseConfig):
+    RABBIT_HOST: str
+    RABBIT_PORT: int
+    RABBIT_USER: str
+    RABBIT_PASSWORD: str
+    RABBIT_VHOST: str
+
+    @property
+    def connect_url(self):
+        return f"amqp://{self.RABBIT_USER}:{self.RABBIT_PASSWORD}@{self.RABBIT_HOST}:{self.RABBIT_PORT}/{self.RABBIT_VHOST}"
+
+
 class Config(BaseModel):
     """
     Общий конфиг.
@@ -96,6 +108,7 @@ class Config(BaseModel):
 
     log_config: LoggConfig = LoggConfig()
     bx_config: BitrixClientConfig = BitrixClientConfig()
+    rabbit_config: RabbitClientConfig = RabbitClientConfig()
 
 
 config = Config()

@@ -10,6 +10,10 @@ logger = getLogger(__name__)
 
 
 class BitrixClient:
+    """
+    Клиент для работы с Bitrix API.
+    """
+
     bx: BitrixAsync | None
 
     @classmethod
