@@ -26,10 +26,6 @@ class BitrixClient:
         )
 
     @classmethod
-    async def down(cls):
-        cls.bx = None
-
-    @classmethod
     async def health_chek(cls) -> bool:
         try:
             logger.info("Trying to Bitrix health chek")
