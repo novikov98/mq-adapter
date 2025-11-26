@@ -5,6 +5,8 @@ from typing import ClassVar
 from pydantic_settings import BaseSettings
 from pydantic import BaseModel
 
+from utils.log_filter import MaskTokenFilter
+
 
 BASE_DIR = Path(__file__).parent.parent
 
@@ -37,6 +39,11 @@ class LoggConfig(BaseConfig):
                     "format": "[%(asctime)s] [%(levelname)s] %(name)s: %(message)s",
                 },
             },
+            "filters": {
+                "mask_token": {
+                    "()": MaskTokenFilter,
+                }
+            },
             "handlers": {
                 "default": {
                     "level": self.LOG_LEVEL,
@@ -57,6 +64,8 @@ class LoggConfig(BaseConfig):
                     "propagate": True,
                     "handlers": ["default"],
                 },
+                "httpx": {"level": "INFO", "filters": ["mask_token"]},
+                "httpcore": {"level": "INFO", "filters": ["mask_token"]},
             },
         }
 
