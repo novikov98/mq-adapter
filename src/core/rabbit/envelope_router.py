@@ -1,26 +1,46 @@
+from typing import Callable, Awaitable
+
 from src.core.rabbit.dto import Envelope
 
 
-class BaseEnvelopeService:
-    async def handle(self, envelope: Envelope) -> None:
-        raise NotImplementedError
+Handler = Callable[[Envelope], Awaitable[None]]
 
 
 class EnvelopeRouter:
+    """
+    Роутер для пакетов из очередей
+    """
+
     def __init__(self):
-        self.handlers: dict[str, BaseEnvelopeService] = {}
+        self.handlers: dict[tuple[str, float | None], Handler] = {}
 
-    def register(self, event_type: str, handler: BaseEnvelopeService) -> None:
-        self.handlers[event_type] = handler
+    def on(self, action: str, *, version: float | None = None) -> Callable[[Handler], Handler]:
+        """
+        Декоратор для регистрации обработчика по event_action.
+        """
+        key = (action, version)
 
-    async def route(self, envelope: Envelope) -> bool:
+        def decorator(func: Handler) -> Handler:
+            self.handlers[key] = func
+            return func
+
+        return decorator
+
+    async def dispatch(self, envelope: Envelope) -> bool:
         """
-        :return: True, если обработчик найден и отработал без исключения,
-                 False, если обработчика нет.
+        Пытается найти и выполнить обработчик.
+        Сначала ищем по (action, version), потом по (action, None) как fallback.
+        :return: True если нашли обработчик, False если нет.
         """
-        handler = self.handlers.get(envelope.event_type)
-        if not handler:
+
+        key = (envelope.event_action, envelope.event_version)
+        handler = self.handlers.get(key)
+
+        if handler is None:
+            handler = self.handlers.get((envelope.event_action, None))
+
+        if handler is None:
             return False
 
-        await handler.handle(envelope)
+        await handler(envelope)
         return True

@@ -1,4 +1,6 @@
 from datetime import datetime
+from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -8,7 +10,7 @@ class Payload(BaseModel):
 
 
 class Envelope(BaseModel):
-    message_id: str
+    message_id: UUID
     event_type: str
     event_action: str
     event_version: float
@@ -16,5 +18,5 @@ class Envelope(BaseModel):
     destination_system: str
     occurred_at: datetime
     sent_at: datetime
-    correlation_id: str | None
-    payload: Payload
+    correlation_id: UUID | None = None
+    payload: dict[str, Any]
