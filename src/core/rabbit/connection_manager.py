@@ -5,8 +5,6 @@ from logging import getLogger
 
 import aio_pika
 
-from src.config import config
-
 
 logger = getLogger(__name__)
 
@@ -20,8 +18,8 @@ class RabbitConnectionManager:
     - Может отдавать новые каналы поверх одного соединения.
     """
 
-    def __init__(self):
-        self.url = config.rabbit_config.connect_url
+    def __init__(self, rabbit_url: str):
+        self.url: str = rabbit_url
         self.connection: aio_pika.RobustConnection | None = None
         self.lock: asyncio.Lock = asyncio.Lock()
 
