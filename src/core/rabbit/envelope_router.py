@@ -1,7 +1,7 @@
 from typing import Callable, Awaitable
 
 from src.core.rabbit.dto import Envelope
-
+from src.core.rabbit.exceptions import EnvelopeHandlerNotRegisteredError
 
 Handler = Callable[[Envelope], Awaitable[None]]
 
@@ -26,7 +26,7 @@ class EnvelopeRouter:
 
         return decorator
 
-    async def dispatch(self, envelope: Envelope) -> bool:
+    async def dispatch(self, envelope: Envelope):
         """
         Пытается найти и выполнить обработчик.
         Сначала ищем по (action, version), потом по (action, None) как fallback.
@@ -37,10 +37,10 @@ class EnvelopeRouter:
         handler = self.handlers.get(key)
 
         if handler is None:
-            handler = self.handlers.get((envelope.event_action, None))
+            key_fallback = (envelope.event_action, None)
+            handler = self.handlers.get(key_fallback)
 
         if handler is None:
-            return False
+            raise EnvelopeHandlerNotRegisteredError()
 
         await handler(envelope)
-        return True

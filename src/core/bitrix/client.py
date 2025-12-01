@@ -1,9 +1,9 @@
 from logging import getLogger
 
 from bx_client.bitrix import BitrixAsync
-from bx_client.dto.requests import BitrixRequest
 
 from src.config import config
+from src.core.bitrix.availabilit_guard import BitrixAvailabilityGuard
 
 
 logger = getLogger(__name__)
@@ -15,6 +15,7 @@ class BitrixClient:
     """
 
     bx: BitrixAsync | None
+    bitrix_availability_guard: BitrixAvailabilityGuard | None
 
     @classmethod
     async def init(cls):
@@ -28,19 +29,9 @@ class BitrixClient:
             max_request_retries=config.bx_config.BX_MAX_REQUEST_RETRIES,
             ssl=config.bx_config.BX_REQUEST_SSL_CONTROL,
         )
+        cls.bitrix_availability_guard = BitrixAvailabilityGuard(cls.bx)
 
     @classmethod
-    async def health_chek(cls) -> bool:
-        try:
-            logger.info("Trying to Bitrix health chek")
-            query = BitrixRequest(method="user.current", params=None)
-            res = await cls.bx.call_method(query)
-            if int(res.result.get("ID")) == config.bx_config.BX_WEBHOOK_OWNER_ID:
-                logger.info("Bitrix is alive")
-                return True
-            else:
-                logger.fatal("Bitrix is not alive")
-                return False
-        except Exception as e:
-            logger.fatal(e)
-            return False
+    async def shutdown(cls):
+        cls.bx = None
+        cls.bitrix_availability_guard = None

@@ -23,15 +23,13 @@ async def lifespan():
 
     yield
 
-    # Перед отключением
+    await BitrixClient.shutdown()
 
 
 async def main():
     """
     Точка входа приложения.
     """
-
-    await BitrixClient.health_chek()
 
 
 if __name__ == "__main__":

@@ -1,14 +1,21 @@
 import json
+from datetime import datetime
 from logging import getLogger
 
 import aio_pika
 from aio_pika.abc import AbstractIncomingMessage
 
+from src.core.bitrix.availabilit_guard import BitrixAvailabilityGuard
+from src.core.bitrix.exceptions import BitrixTemporaryUnavailableError
 from src.core.rabbit.connection_manager import RabbitConnectionManager
 from src.core.rabbit.dto import QueueConfig, Envelope
 from src.core.rabbit.envelope_router import EnvelopeRouter
+from src.core.rabbit.exceptions import EnvelopeHandlerNotRegisteredError, RabbitException
 
 logger = getLogger(__name__)
+
+
+DLQ_ERRORS = EnvelopeHandlerNotRegisteredError
 
 
 class QueueConsumer:
@@ -17,7 +24,12 @@ class QueueConsumer:
     """
 
     def __init__(
-        self, name: str, connection_manager: RabbitConnectionManager, queue_config: QueueConfig, router: EnvelopeRouter
+        self,
+        name: str,
+        connection_manager: RabbitConnectionManager,
+        queue_config: QueueConfig,
+        router: EnvelopeRouter,
+        bitrix_availability_guard: BitrixAvailabilityGuard,
     ) -> None:
         self.name = name
         self.connection_manager = connection_manager
@@ -26,6 +38,7 @@ class QueueConsumer:
         self.channel: aio_pika.RobustChannel | None = None
         self.queue: aio_pika.RobustQueue | None = None
         self.consumer_tag: str | None = None
+        self.bitrix_availability_guard: BitrixAvailabilityGuard = bitrix_availability_guard
 
     async def start(self) -> None:
         """
@@ -69,7 +82,7 @@ class QueueConsumer:
         await self.queue.bind(exchange, routing_key=self.queue_config.routing_key)
 
         # Запуск консьюмера
-        self.consumer_tag = await self.queue.consume(self.on_message)
+        self.consumer_tag = await self.queue.consume(self._on_message)
 
         logger.info(
             f"Consumer {self.name} started. queue={self.queue_config.queue_name}, "
@@ -91,7 +104,26 @@ class QueueConsumer:
 
         logger.info(f"Consumer {self.name} stopped.")
 
-    async def on_message(self, msg: AbstractIncomingMessage) -> None:
+    async def pause(self) -> None:
+        """
+        Останавливает чтение из очереди.
+        """
+
+        if self.queue and self.consumer_tag:
+            await self.queue.cancel(self.consumer_tag)
+            self.consumer_tag = None
+            logger.warning(f"Consumer {self.name} paused.")
+
+    async def resume(self) -> None:
+        """
+        Возобновляет чтение из очереди.
+        """
+
+        if self.queue and not self.consumer_tag:
+            self.consumer_tag = await self.queue.consume(self._on_message)
+            logger.info(f"Consumer {self.name} resumed.")
+
+    async def _on_message(self, msg: AbstractIncomingMessage) -> None:
         """
         Callback для обработки сообщений из очереди.
         """
@@ -101,18 +133,35 @@ class QueueConsumer:
                 data = json.loads(msg.body)
                 envelope = Envelope(**data)
 
-                handled = await self.router.dispatch(envelope)
-
-                if not handled:
-                    logger.error(
-                        f"No handler for action={envelope.event_action} version={envelope.event_version}; sending to DLQ"
-                    )
-
-                    await msg.reject(requeue=False)
-                    return
+                await self.router.dispatch(envelope)
 
                 await msg.ack()
                 logger.debug(f"Message handled successfully. message_id={envelope.message_id}")
+
+            except BitrixTemporaryUnavailableError:
+                logger.warning("Bitrix temporary unavailable. Requeue message and pause consumer.")
+                await msg.reject(requeue=True)
+
+                await self.pause()
+                await self.bitrix_availability_guard.wait_until_up()
+                await self.resume()
+
+            except EnvelopeHandlerNotRegisteredError as e:
+                logger.error(
+                    f"No handler for action={envelope.event_action} version={envelope.event_version}; sending to DLQ"
+                )
+                msg = self.add_dlq_headers(msg, e)
+                await msg.reject(requeue=False)
+                return
+
             except Exception:
                 logger.exception("Error while processing message; sending to DLQ")
-                await msg.nack(requeue=False)
+                await msg.reject(requeue=False)
+
+    def add_dlq_headers(self, msg: AbstractIncomingMessage, exception: RabbitException) -> AbstractIncomingMessage:
+        msg.headers["x-error-type"] = type(exception).__name__
+        msg.headers["x-error-message"] = str(exception.message)
+        msg.headers["x-consumer"] = self.name
+        msg.headers["x-error-timestamp"] = datetime.now().isoformat()
+
+        return msg

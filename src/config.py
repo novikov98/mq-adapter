@@ -87,6 +87,9 @@ class BitrixClientConfig(BaseConfig):
     BX_MAX_REQUEST_RETRIES: int
     BX_WEBHOOK_OWNER_ID: int
     BX_REQUEST_SSL_CONTROL: bool = True
+    BX_HEALTH_CHECK_BACKOFF_INITIAL_DELAY: int
+    BX_HEALTH_CHECK_BACKOFF_MAX_DELAY: int
+    BX_HEALTH_CHECK_BACKOFF_MULTIPLIER: int
 
 
 class RabbitClientConfig(BaseConfig):
