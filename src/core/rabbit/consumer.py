@@ -4,13 +4,14 @@ from logging import getLogger
 
 import aio_pika
 from aio_pika.abc import AbstractIncomingMessage
+from pydantic import ValidationError
 
 from src.core.bitrix.availabilit_guard import BitrixAvailabilityGuard
 from src.core.bitrix.exceptions import BitrixTemporaryUnavailableError
 from src.core.rabbit.connection_manager import RabbitConnectionManager
 from src.core.rabbit.dto import QueueConfig, Envelope
 from src.core.rabbit.envelope_router import EnvelopeRouter
-from src.core.rabbit.exceptions import EnvelopeHandlerNotRegisteredError, RabbitException
+from src.core.rabbit.exceptions import EnvelopeHandlerNotRegisteredError
 
 logger = getLogger(__name__)
 
@@ -138,6 +139,22 @@ class QueueConsumer:
                 await msg.ack()
                 logger.debug(f"Message handled successfully. message_id={envelope.message_id}")
 
+            # Не нашелся зарегистрированный обработчик для пакета
+            except EnvelopeHandlerNotRegisteredError as e:
+                logger.exception(
+                    f"No handler for action={envelope.event_action} version={envelope.event_version}; sending to DLQ"
+                )
+                msg = self.add_dlq_headers(msg, e, e.message)
+                await msg.reject(requeue=False)
+                return
+
+            # Неверная структура пакета
+            except (json.JSONDecodeError, ValidationError) as e:
+                logger.exception("Invalid message format, sending to DLQ")
+                msg = self.add_dlq_headers(msg, e, "Invalid message format")
+                await msg.reject(requeue=False)
+
+            # Битрикс упал
             except BitrixTemporaryUnavailableError:
                 logger.warning("Bitrix temporary unavailable. Requeue message and pause consumer.")
                 await msg.reject(requeue=True)
@@ -146,21 +163,15 @@ class QueueConsumer:
                 await self.bitrix_availability_guard.wait_until_up()
                 await self.resume()
 
-            except EnvelopeHandlerNotRegisteredError as e:
-                logger.error(
-                    f"No handler for action={envelope.event_action} version={envelope.event_version}; sending to DLQ"
-                )
-                msg = self.add_dlq_headers(msg, e)
-                await msg.reject(requeue=False)
-                return
-
             except Exception:
                 logger.exception("Error while processing message; sending to DLQ")
                 await msg.reject(requeue=False)
 
-    def add_dlq_headers(self, msg: AbstractIncomingMessage, exception: RabbitException) -> AbstractIncomingMessage:
+    def add_dlq_headers(
+        self, msg: AbstractIncomingMessage, exception: Exception, message: str
+    ) -> AbstractIncomingMessage:
         msg.headers["x-error-type"] = type(exception).__name__
-        msg.headers["x-error-message"] = str(exception.message)
+        msg.headers["x-error-message"] = message
         msg.headers["x-consumer"] = self.name
         msg.headers["x-error-timestamp"] = datetime.now().isoformat()
 
