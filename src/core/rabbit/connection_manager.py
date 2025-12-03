@@ -70,15 +70,7 @@ class RabbitConnectionManager:
 
         if not self.connection.is_closed:
             logger.info("Closing RabbitMQ connection...")
-            self.connection.close()
+            await self.connection.close()
             logger.info("RabbitMQ connection closed.")
 
         self.connection = None
-
-
-class QueueConsumer:
-    """
-    Консьюмер очередей.
-
-
-    """

@@ -142,7 +142,8 @@ class QueueConsumer:
             # Не нашелся зарегистрированный обработчик для пакета
             except EnvelopeHandlerNotRegisteredError as e:
                 logger.exception(
-                    f"No handler for action={envelope.event_action} version={envelope.event_version}; sending to DLQ"
+                    f"No handler for action={envelope.event_action} version={envelope.event_version}; sending to DLQ\n"
+                    f"message_id:{envelope.message_id} | event_type: {envelope.eve}"
                 )
                 msg = self.add_dlq_headers(msg, e, e.message)
                 await msg.reject(requeue=False)
@@ -150,13 +151,19 @@ class QueueConsumer:
 
             # Неверная структура пакета
             except (json.JSONDecodeError, ValidationError) as e:
-                logger.exception("Invalid message format, sending to DLQ")
+                logger.exception(
+                    f"Invalid message format; sending to DLQ\n"
+                    f"message_id:{envelope.message_id} | event_type: {envelope.eve}"
+                )
                 msg = self.add_dlq_headers(msg, e, "Invalid message format")
                 await msg.reject(requeue=False)
 
             # Битрикс упал
             except BitrixTemporaryUnavailableError:
-                logger.warning("Bitrix temporary unavailable. Requeue message and pause consumer.")
+                logger.exception(
+                    f"Bitrix temporary unavailable. Requeue message and pause consumer.\n"
+                    f"message_id:{envelope.message_id} | event_type: {envelope.eve}"
+                )
                 await msg.reject(requeue=True)
 
                 await self.pause()
@@ -164,7 +171,10 @@ class QueueConsumer:
                 await self.resume()
 
             except Exception:
-                logger.exception("Error while processing message; sending to DLQ")
+                logger.exception(
+                    f"Error while processing message; sending to DLQ\n"
+                    f"message_id:{envelope.message_id} | event_type: {envelope.eve}"
+                )
                 await msg.reject(requeue=False)
 
     def add_dlq_headers(

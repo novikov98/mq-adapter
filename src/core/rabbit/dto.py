@@ -8,7 +8,7 @@ from pydantic import BaseModel
 class QueueConfig(BaseModel):
     queue_name: str
     exchange_name: str
-    routing_key: str
+    binding_key: str
     exchange_type: Literal["fanout", "topic", "direct"] = "topic"
     durable: bool = True
     auto_delete: bool = False
