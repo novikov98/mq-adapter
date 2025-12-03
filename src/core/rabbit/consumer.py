@@ -80,14 +80,14 @@ class QueueConsumer:
         )
 
         # Бинд очереди к exchange
-        await self.queue.bind(exchange, routing_key=self.queue_config.routing_key)
+        await self.queue.bind(exchange, routing_key=self.queue_config.binding_key)
 
         # Запуск консьюмера
         self.consumer_tag = await self.queue.consume(self._on_message)
 
         logger.info(
             f"Consumer {self.name} started. queue={self.queue_config.queue_name}, "
-            f"exchange={self.queue_config.exchange_name}, routing_key={self.queue_config.routing_key}"
+            f"exchange={self.queue_config.exchange_name}, routing_key={self.queue_config.binding_key}"
         )
 
     async def stop(self) -> None:

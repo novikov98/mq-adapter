@@ -2,9 +2,10 @@ import asyncio
 from logging import getLogger
 from contextlib import asynccontextmanager
 
-from config import config
-from core.bitrix import BitrixClient
-
+from src.config import config
+from src.core.bitrix.client import BitrixClient
+from src.consumers.vacation import vacation_consumer
+from src.core.rabbit.client import RabbitClient
 
 config.log_config.setup_logging()
 logger = getLogger(__name__)
@@ -20,16 +21,26 @@ async def lifespan():
     """
 
     await BitrixClient.init()
+    rabbit = RabbitClient(
+        rabbit_url=config.rabbit_config.connect_url,
+        bitrix_availability_guard=BitrixClient.bitrix_availability_guard,
+        consumers=[vacation_consumer],
+    )
+    await rabbit.start()
 
-    yield
+    try:
+        yield rabbit
+    finally:
 
-    await BitrixClient.shutdown()
+        await rabbit.close()
+        await BitrixClient.shutdown()
 
 
 async def main():
     """
     Точка входа приложения.
     """
+    await asyncio.Event().wait()
 
 
 if __name__ == "__main__":
@@ -38,4 +49,7 @@ if __name__ == "__main__":
         async with lifespan():
             await main()
 
-    asyncio.run(app())
+    try:
+        asyncio.run(app())
+    except KeyboardInterrupt:
+        pass

@@ -5,7 +5,7 @@ from typing import ClassVar
 from pydantic_settings import BaseSettings
 from pydantic import BaseModel
 
-from utils.log_filter import MaskTokenFilter
+from src.utils.log_filter import MaskTokenFilter
 
 
 BASE_DIR = Path(__file__).parent.parent
@@ -97,7 +97,7 @@ class RabbitClientConfig(BaseConfig):
     RABBIT_PORT: int
     RABBIT_USER: str
     RABBIT_PASSWORD: str
-    RABBIT_VHOST: str
+    RABBIT_VHOST: str = ""
 
     @property
     def connect_url(self):

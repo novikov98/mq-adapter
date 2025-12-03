@@ -1,6 +1,5 @@
+from dataclasses import dataclass
 from logging import getLogger
-
-from pydantic import BaseModel
 
 from src.core.bitrix.availabilit_guard import BitrixAvailabilityGuard
 from src.core.rabbit.connection_manager import RabbitConnectionManager
@@ -12,7 +11,8 @@ from src.core.rabbit.envelope_router import EnvelopeRouter
 logger = getLogger(__name__)
 
 
-class Consumer(BaseModel):
+@dataclass
+class Consumer:
     name: str
     config: QueueConfig
     router: EnvelopeRouter
