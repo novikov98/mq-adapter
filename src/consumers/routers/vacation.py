@@ -2,7 +2,7 @@ from src.consumers.services.vacation import VacationService
 from src.core.bitrix.client import BitrixClient
 from src.core.rabbit.dto import Envelope
 from src.core.rabbit.envelope_router import EnvelopeRouter
-from src.consumers.dto.vacation import VacationUpsertDTO
+from src.consumers.dto.vacation import VacationPayloadDTO
 
 
 router = EnvelopeRouter()
@@ -12,8 +12,8 @@ router = EnvelopeRouter()
 async def upsert(envelope: Envelope):
     try:
         service = VacationService(bx=BitrixClient.bx)
-        vacation = VacationUpsertDTO(**envelope.payload)
+        vacation = VacationPayloadDTO(**envelope.payload)
         await service.upsert_vacation(vacation)
 
     except Exception:
-        pass
+        raise

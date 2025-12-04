@@ -153,7 +153,7 @@ class QueueConsumer:
             except (json.JSONDecodeError, ValidationError) as e:
                 logger.exception(
                     f"Invalid message format; sending to DLQ\n"
-                    f"message_id:{envelope.message_id} | event_type: {envelope.eve}"
+                    f"message_id:{envelope.message_id} | event_type: {envelope.event_type}"
                 )
                 msg = self.add_dlq_headers(msg, e, "Invalid message format")
                 await msg.reject(requeue=False)
@@ -162,7 +162,7 @@ class QueueConsumer:
             except BitrixTemporaryUnavailableError:
                 logger.exception(
                     f"Bitrix temporary unavailable. Requeue message and pause consumer.\n"
-                    f"message_id:{envelope.message_id} | event_type: {envelope.eve}"
+                    f"message_id:{envelope.message_id} | event_type: {envelope.event_type}"
                 )
                 await msg.reject(requeue=True)
 
@@ -173,7 +173,7 @@ class QueueConsumer:
             except Exception:
                 logger.exception(
                     f"Error while processing message; sending to DLQ\n"
-                    f"message_id:{envelope.message_id} | event_type: {envelope.eve}"
+                    f"message_id:{envelope.message_id} | event_type: {envelope.event_type}"
                 )
                 await msg.reject(requeue=False)
 
