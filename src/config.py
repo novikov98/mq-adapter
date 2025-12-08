@@ -1,6 +1,6 @@
 from logging.config import dictConfig
 from pathlib import Path
-from typing import ClassVar
+from typing import ClassVar, List
 
 from pydantic_settings import BaseSettings
 from pydantic import BaseModel
@@ -104,6 +104,24 @@ class RabbitClientConfig(BaseConfig):
         return f"amqp://{self.RABBIT_USER}:{self.RABBIT_PASSWORD}@{self.RABBIT_HOST}:{self.RABBIT_PORT}/{self.RABBIT_VHOST}"
 
 
+class RedisConfig(BaseConfig):
+    """
+    Конфиг для Redis клиента.
+    """
+
+    REDIS_USE_SENTINEL: bool = False
+    REDIS_SENTINELS: str = ""
+    REDIS_MASTER_NAME: str = "mymaster"
+
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
+
+    @property
+    def sentinel_address(self) -> List[tuple[str, int]]:
+        return [tuple(addr.split(":")) for addr in self.REDIS_SENTINELS.split(",")]
+
+
 class Config(BaseModel):
     """
     Общий конфиг.
@@ -112,6 +130,7 @@ class Config(BaseModel):
     log_config: LoggConfig = LoggConfig()
     bx_config: BitrixClientConfig = BitrixClientConfig()
     rabbit_config: RabbitClientConfig = RabbitClientConfig()
+    redis_config: RedisConfig = RedisConfig()
 
 
 config = Config()

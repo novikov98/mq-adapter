@@ -6,6 +6,7 @@ from src.config import config
 from src.core.bitrix.client import BitrixClient
 from src.consumers.vacation import vacation_consumer
 from src.core.rabbit.client import RabbitClient
+from src.core.redis.client import RedisClient
 
 config.log_config.setup_logging()
 logger = getLogger(__name__)
@@ -21,6 +22,7 @@ async def lifespan():
     """
 
     await BitrixClient.init()
+    await RedisClient.init_redis()
     rabbit = RabbitClient(
         rabbit_url=config.rabbit_config.connect_url,
         bitrix_availability_guard=BitrixClient.bitrix_availability_guard,
@@ -33,6 +35,7 @@ async def lifespan():
     finally:
 
         await rabbit.close()
+        await RedisClient.close_redis()
         await BitrixClient.shutdown()
 
 
