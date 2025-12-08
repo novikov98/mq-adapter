@@ -43,7 +43,7 @@ class RabbitClient:
                 queue_config=definition.config,
                 router=definition.router,
                 bitrix_availability_guard=bitrix_availability_guard,
-                middlewares=definition.middlewares.extend(middlewares),
+                middlewares=middlewares + definition.middlewares,
             )
             self.consumers.append(consumer)
 
