@@ -117,6 +117,9 @@ class RedisConfig(BaseConfig):
     REDIS_PORT: int = 6379
     REDIS_DB: int = 0
 
+    REDIS_ENVELOPE_PROCESSING_TTL: int = 0
+    REDIS_ENVELOPE_PROCESSED_TTL: int = 0
+
     @property
     def sentinel_address(self) -> List[tuple[str, int]]:
         return [tuple(addr.split(":")) for addr in self.REDIS_SENTINELS.split(",")]

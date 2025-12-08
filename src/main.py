@@ -4,9 +4,10 @@ from contextlib import asynccontextmanager
 
 from src.config import config
 from src.core.bitrix.client import BitrixClient
-from src.consumers.vacation import vacation_consumer
 from src.core.rabbit.client import RabbitClient
 from src.core.redis.client import RedisClient
+from src.consumers.vacation import vacation_consumer
+from src.consumers.middlewares.idempotency_middelware import IdempotencyMiddleware
 
 config.log_config.setup_logging()
 logger = getLogger(__name__)
@@ -23,10 +24,13 @@ async def lifespan():
 
     await BitrixClient.init()
     await RedisClient.init_redis()
+
+    idempotency_mw = IdempotencyMiddleware(RedisClient.get_redis())
     rabbit = RabbitClient(
         rabbit_url=config.rabbit_config.connect_url,
         bitrix_availability_guard=BitrixClient.bitrix_availability_guard,
         consumers=[vacation_consumer],
+        middlewares=[idempotency_mw],
     )
     await rabbit.start()
 

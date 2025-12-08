@@ -6,3 +6,7 @@ class RabbitException(Exception):
 
 class EnvelopeHandlerNotRegisteredError(RabbitException):
     pass
+
+
+class DuplicateEnvelopeError(RabbitException):
+    pass
