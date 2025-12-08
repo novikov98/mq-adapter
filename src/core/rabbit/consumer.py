@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 from logging import getLogger
+from typing import Callable, Awaitable
 
 import aio_pika
 from aio_pika.abc import AbstractIncomingMessage
@@ -12,11 +13,13 @@ from src.core.rabbit.connection_manager import RabbitConnectionManager
 from src.core.rabbit.dto import QueueConfig, Envelope
 from src.core.rabbit.envelope_router import EnvelopeRouter
 from src.core.rabbit.exceptions import EnvelopeHandlerNotRegisteredError
+from src.core.rabbit.middleware import AbstractMiddleware
 
 logger = getLogger(__name__)
 
 
 DLQ_ERRORS = EnvelopeHandlerNotRegisteredError
+MiddlewareCallable = Callable[[Envelope], Awaitable[None]]
 
 
 class QueueConsumer:
@@ -31,6 +34,7 @@ class QueueConsumer:
         queue_config: QueueConfig,
         router: EnvelopeRouter,
         bitrix_availability_guard: BitrixAvailabilityGuard,
+        middlewares: list[AbstractMiddleware] | None = None,
     ) -> None:
         self.name = name
         self.connection_manager = connection_manager
@@ -40,6 +44,7 @@ class QueueConsumer:
         self.queue: aio_pika.RobustQueue | None = None
         self.consumer_tag: str | None = None
         self.bitrix_availability_guard: BitrixAvailabilityGuard = bitrix_availability_guard
+        self.middlewares: list[AbstractMiddleware] | None = middlewares
 
     async def start(self) -> None:
         """
@@ -134,7 +139,8 @@ class QueueConsumer:
                 data = json.loads(msg.body)
                 envelope = Envelope(**data)
 
-                await self.router.dispatch(envelope)
+                pipeline = self.build_pipeline()
+                await pipeline(envelope)
 
                 await msg.ack()
                 logger.debug(f"Message handled successfully. message_id={envelope.message_id}")
@@ -186,3 +192,16 @@ class QueueConsumer:
         msg.headers["x-error-timestamp"] = datetime.now().isoformat()
 
         return msg
+
+    def build_pipeline(self) -> MiddlewareCallable:
+        next_callable = self.router.dispatch
+
+        for middel_ware in reversed(self.middlewares):
+            current_next = next_callable
+
+            async def wrapped(envelope: Envelope, mw=middel_ware, call_next=current_next):
+                await mw.dispatch(envelope, call_next)
+
+            next_callable = wrapped
+
+        return next_callable

@@ -6,7 +6,7 @@ from src.core.rabbit.connection_manager import RabbitConnectionManager
 from src.core.rabbit.consumer import QueueConsumer
 from src.core.rabbit.dto import QueueConfig
 from src.core.rabbit.envelope_router import EnvelopeRouter
-
+from src.core.rabbit.middleware import AbstractMiddleware
 
 logger = getLogger(__name__)
 
@@ -16,6 +16,7 @@ class Consumer:
     name: str
     config: QueueConfig
     router: EnvelopeRouter
+    middlewares: list[AbstractMiddleware] | None = None
 
 
 class RabbitClient:
@@ -24,7 +25,13 @@ class RabbitClient:
     Управляет подключением к Rabbit и консюмерами.
     """
 
-    def __init__(self, rabbit_url: str, consumers: list[Consumer], bitrix_availability_guard: BitrixAvailabilityGuard):
+    def __init__(
+        self,
+        rabbit_url: str,
+        consumers: list[Consumer],
+        bitrix_availability_guard: BitrixAvailabilityGuard,
+        middlewares: list[AbstractMiddleware] | None = None,
+    ):
         self.connection_manager = RabbitConnectionManager(rabbit_url)
         self.bitrix_availability_guard: BitrixAvailabilityGuard = bitrix_availability_guard
 
@@ -36,6 +43,7 @@ class RabbitClient:
                 queue_config=definition.config,
                 router=definition.router,
                 bitrix_availability_guard=bitrix_availability_guard,
+                middlewares=definition.middlewares.extend(middlewares),
             )
             self.consumers.append(consumer)
 
