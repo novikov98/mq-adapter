@@ -12,7 +12,7 @@ from src.core.bitrix.exceptions import BitrixTemporaryUnavailableError
 from src.core.rabbit.connection_manager import RabbitConnectionManager
 from src.core.rabbit.dto import QueueConfig, Envelope
 from src.core.rabbit.envelope_router import EnvelopeRouter
-from src.core.rabbit.exceptions import EnvelopeHandlerNotRegisteredError
+from src.core.rabbit.exceptions import EnvelopeHandlerNotRegisteredError, DuplicateEnvelopeError
 from src.core.rabbit.middleware import AbstractMiddleware
 
 logger = getLogger(__name__)
@@ -145,16 +145,6 @@ class QueueConsumer:
                 await msg.ack()
                 logger.debug(f"Message handled successfully. message_id={envelope.message_id}")
 
-            # Не нашелся зарегистрированный обработчик для пакета
-            except EnvelopeHandlerNotRegisteredError as e:
-                logger.exception(
-                    f"No handler for action={envelope.event_action} version={envelope.event_version}; sending to DLQ\n"
-                    f"message_id:{envelope.message_id} | event_type: {envelope.eve}"
-                )
-                msg = self.add_dlq_headers(msg, e, e.message)
-                await msg.reject(requeue=False)
-                return
-
             # Неверная структура пакета
             except (json.JSONDecodeError, ValidationError) as e:
                 logger.exception(
@@ -162,6 +152,22 @@ class QueueConsumer:
                     f"message_id:{envelope.message_id} | event_type: {envelope.event_type}"
                 )
                 msg = self.add_dlq_headers(msg, e, "Invalid message format")
+                await msg.reject(requeue=False)
+
+            except DuplicateEnvelopeError as e:
+                logger.exception(
+                    f"{e.message}\n" f"message_id:{envelope.message_id} | event_type: {envelope.event_type}"
+                )
+                msg = self.add_dlq_headers(msg, e, e.message)
+                await msg.reject(requeue=False)
+
+            # Не нашелся зарегистрированный обработчик для пакета
+            except EnvelopeHandlerNotRegisteredError as e:
+                logger.exception(
+                    f"No handler for action={envelope.event_action} version={envelope.event_version}; sending to DLQ\n"
+                    f"message_id:{envelope.message_id} | event_type: {envelope.event_type}"
+                )
+                msg = self.add_dlq_headers(msg, e, e.message)
                 await msg.reject(requeue=False)
 
             # Битрикс упал

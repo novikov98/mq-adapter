@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from bx_client.bitrix import BitrixAsync
 from bx_client.dto.requests import BitrixRequest
 
@@ -21,12 +23,12 @@ class VacationService:
             params={
                 "IBLOCK_TYPE_ID": "lists",
                 "IBLOCK_ID": 17,
-                "ELEMENT_CODE": "test_vacation125",
+                "ELEMENT_CODE": f"vacation-{datetime.now()}",
                 "FIELDS": {
                     "NAME": "Тестовый отпуск",
-                    "PROPERTY_64": employee.ID,
-                    "PROPERTY_65": vacation.start_date.strftime("%Y-%m-%d"),
-                    "PROPERTY_66": vacation.end_date.strftime("%Y-%m-%d"),
+                    "PROPERTY_290": employee.ID,
+                    "PROPERTY_291": vacation.start_date.strftime("%Y-%m-%d"),
+                    "PROPERTY_292": vacation.end_date.strftime("%Y-%m-%d"),
                 },
             },
         )

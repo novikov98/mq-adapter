@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from logging import getLogger
 
 from src.core.bitrix.availabilit_guard import BitrixAvailabilityGuard
@@ -16,7 +16,7 @@ class Consumer:
     name: str
     config: QueueConfig
     router: EnvelopeRouter
-    middlewares: list[AbstractMiddleware] | None = None
+    middlewares: list[AbstractMiddleware] = field(default_factory=list)
 
 
 class RabbitClient:

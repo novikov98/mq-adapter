@@ -1,2 +1,2 @@
-class BitrixTemporaryUnavailableError:
+class BitrixTemporaryUnavailableError(Exception):
     pass
