@@ -10,6 +10,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && pip install "poetry==${POETRY_VERSION}" \
     && rm -rf /var/lib/apt/lists/*
 
+ARG GITLAB_TOKEN
+# Проверим, что токен пришёл
+RUN test -n "$GITLAB_TOKEN" || (echo "GITLAB_TOKEN is empty" && exit 1)
+
+# Используем именно build-arg
+RUN poetry config http-basic.bx-client __token__ "$GITLAB_TOKEN"
+
 WORKDIR /app
 
 COPY pyproject.toml poetry.lock ./
