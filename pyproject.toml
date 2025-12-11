@@ -8,8 +8,13 @@ authors = [
 readme = "README.md"
 
 [[tool.poetry.source]]
+name = "pypi"
+priority = "primary"
+
+[[tool.poetry.source]]
 name = "bx-client"
 url = "https://gitlab.medsyst.tech/api/v4/projects/5/packages/pypi/simple"
+priority = "supplemental"
 
 [tool.poetry.dependencies]
 python = ">=3.13,<4.0"
