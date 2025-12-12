@@ -12,7 +12,11 @@ from src.core.bitrix.exceptions import BitrixTemporaryUnavailableError
 from src.core.rabbit.connection_manager import RabbitConnectionManager
 from src.core.rabbit.dto import QueueConfig, Envelope
 from src.core.rabbit.envelope_router import EnvelopeRouter
-from src.core.rabbit.exceptions import EnvelopeHandlerNotRegisteredError, DuplicateEnvelopeError
+from src.core.rabbit.exceptions import (
+    EnvelopeHandlerNotRegisteredError,
+    DuplicateEnvelopeError,
+    EnvelopeProcessingError,
+)
 from src.core.rabbit.middleware import AbstractMiddleware
 
 logger = getLogger(__name__)
@@ -181,6 +185,13 @@ class QueueConsumer:
                 await self.pause()
                 await self.bitrix_availability_guard.wait_until_up()
                 await self.resume()
+
+            except EnvelopeProcessingError as e:
+                logger.exception(
+                    f"Error while processing message; message: {e.message}"
+                    f"message_id:{envelope.message_id} | event_type: {envelope.event_type}"
+                )
+                await msg.reject(requeue=e.requeue)
 
             except Exception:
                 logger.exception(
