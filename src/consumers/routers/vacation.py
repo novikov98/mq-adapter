@@ -1,3 +1,4 @@
+from src.consumers.repositoryes import AbsenceRepository, EmployeeRepository
 from src.consumers.services.vacation import VacationService
 from src.core.bitrix.client import BitrixClient
 from src.core.rabbit.dto import Envelope
@@ -11,9 +12,9 @@ router = EnvelopeRouter()
 @router.on("upsert", version=1.0)
 async def upsert(envelope: Envelope):
     try:
-        service = VacationService(bx=BitrixClient.bx)
+        service = VacationService(bx=BitrixClient.bx, employee_repo=EmployeeRepository, absence_repo=AbsenceRepository)
         vacation = VacationPayloadDTO(**envelope.payload)
-        await service.upsert_vacation(vacation)
+        await service.add_vacation(vacation)
 
     except Exception:
         raise
