@@ -2,6 +2,8 @@ import asyncio
 from logging import getLogger
 from contextlib import asynccontextmanager
 
+import httpx
+
 from src.config import config
 from src.core.bitrix.client import BitrixClient
 from src.core.rabbit.client import RabbitClient
@@ -22,7 +24,8 @@ async def lifespan():
     - Корректное отключение
     """
 
-    await BitrixClient.init()
+    http_session = httpx.AsyncClient(verify=config.bx_config.BX_REQUEST_SSL_CONTROL)
+    await BitrixClient.init(http_session)
     await RedisClient.init_redis()
 
     idempotency_mw = IdempotencyMiddleware(RedisClient.get_redis())
@@ -41,6 +44,7 @@ async def lifespan():
         await rabbit.close()
         await RedisClient.close_redis()
         await BitrixClient.shutdown()
+        await http_session.aclose()
 
 
 async def main():

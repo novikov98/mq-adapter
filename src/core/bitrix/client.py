@@ -1,6 +1,7 @@
 from logging import getLogger
 
-from bx_client.bitrix import BitrixAsync
+import httpx
+from bx_client import BitrixAsync
 
 from src.config import config
 from src.core.bitrix.availabilit_guard import BitrixAvailabilityGuard
@@ -18,7 +19,7 @@ class BitrixClient:
     bitrix_availability_guard: BitrixAvailabilityGuard | None
 
     @classmethod
-    async def init(cls):
+    async def init(cls, http_session: httpx.AsyncClient):
         cls.bx = BitrixAsync(
             webhook=config.bx_config.BX_WEBHOOK,
             respect_velocity_policy=config.bx_config.BX_RESPECT_VELOCITY_POLICY,
