@@ -46,9 +46,10 @@ class BitrixAvailabilityGuard:
             else:
                 logger.fatal("Bitrix is not alive")
                 raise BitrixTemporaryUnavailableError
+        # TODO: Подумать получше. Не нравится что принимаем как падение битрикса любую ошибку
         except Exception as e:
             logger.fatal(e)
-            raise
+            raise BitrixTemporaryUnavailableError
 
     async def wait_until_up(self):
         """

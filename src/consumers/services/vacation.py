@@ -43,7 +43,7 @@ class VacationService:
             await self.absence_repo.add(absence)
 
         except BitrixInvalidRequestError as e:
-            logger.error(
+            logger.debug(
                 f"Bitrix API error\n"
                 f"error: {e.bitrix_error.error}\n"
                 f"description: {e.bitrix_error.error_description}\n"

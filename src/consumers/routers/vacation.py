@@ -23,9 +23,11 @@ async def upsert(envelope: Envelope):
         await service.add_vacation(vacation)
 
     except BitrixServerError:
-        await BitrixClient.bitrix_availability_guard.mark_down()
-        raise BitrixTemporaryUnavailableError()
+        await BitrixClient.bitrix_availability_guard.health_chek()
     except BitrixInvalidRequestError:
         raise EnvelopeProcessingError(requeue=False)
+    except BitrixTemporaryUnavailableError:
+        await BitrixClient.bitrix_availability_guard.mark_down()
+        raise
     except Exception:
         raise EnvelopeProcessingError(requeue=False)

@@ -18,7 +18,7 @@ class AbsenceRepository:
 
     async def add(self, absence: AbsenceDTO) -> AbsenceDetailDTO | None:
         try:
-            req = BitrixRequest(method="absence.add", params={**absence})
+            req = BitrixRequest(method="absence.add", params=absence.model_dump(mode="json"))
             resp = await self.bx.call_method(req)
             result = resp.result
             absence = AbsenceDetailDTO(**result)

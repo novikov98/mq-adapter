@@ -29,5 +29,5 @@ class EmployeeRepository:
             employee = res.result[0]
             return EmployeeDTO(**employee)
         except Exception:
-            logger.exception(f"Error while getting employee by email: {email}")
+            logger.error(f"Error while getting employee by email: {email}")
             return None

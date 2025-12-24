@@ -47,7 +47,7 @@ class IdempotencyMiddleware(AbstractMiddleware):
         except Exception:
             # Ошибка: снимаем лок, чтобы сообщение могли обработать повторно
             # после reject(requeue=True) или переотправки из DLQ.
-            logger.exception(f"error during processing message_id: {message_id}, removing lock")
+            logger.error(f"error during processing message_id: {message_id}, removing lock")
             await self.redis.delete(key)
             raise
         else:

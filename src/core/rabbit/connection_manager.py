@@ -45,7 +45,7 @@ class RabbitConnectionManager:
                 logger.info("Connecting to RabbitMQ...")
                 self.connection = await aio_pika.connect_robust(self.url)
             except Exception:
-                logger.exception("Failed to connect to RabbitMQ")
+                logger.error("Failed to connect to RabbitMQ")
                 raise
 
             logger.info("RabbitMQ connection established.")

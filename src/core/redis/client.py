@@ -41,7 +41,7 @@ class RedisClient:
             else:
                 logger.error("Redis ping failed (no response)")
         except RedisError as e:
-            logger.exception(f"Redis connection error: {e}")
+            logger.error(f"Redis connection error: {e}")
             raise
 
     @classmethod

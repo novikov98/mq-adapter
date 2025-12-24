@@ -151,7 +151,7 @@ class QueueConsumer:
 
             # Неверная структура пакета
             except (json.JSONDecodeError, ValidationError) as e:
-                logger.exception(
+                logger.error(
                     f"Invalid message format; sending to DLQ\n"
                     f"message_id:{envelope.message_id} | event_type: {envelope.event_type}"
                 )
@@ -159,15 +159,13 @@ class QueueConsumer:
                 await msg.reject(requeue=False)
 
             except DuplicateEnvelopeError as e:
-                logger.exception(
-                    f"{e.message}\n" f"message_id:{envelope.message_id} | event_type: {envelope.event_type}"
-                )
+                logger.error(f"{e.message}\n" f"message_id:{envelope.message_id} | event_type: {envelope.event_type}")
                 msg = self.add_dlq_headers(msg, e, e.message)
                 await msg.reject(requeue=False)
 
             # Не нашелся зарегистрированный обработчик для пакета
             except EnvelopeHandlerNotRegisteredError as e:
-                logger.exception(
+                logger.error(
                     f"No handler for action={envelope.event_action} version={envelope.event_version}; sending to DLQ\n"
                     f"message_id:{envelope.message_id} | event_type: {envelope.event_type}"
                 )
@@ -176,7 +174,7 @@ class QueueConsumer:
 
             # Битрикс упал
             except BitrixTemporaryUnavailableError:
-                logger.exception(
+                logger.error(
                     f"Bitrix temporary unavailable. Requeue message and pause consumer.\n"
                     f"message_id:{envelope.message_id} | event_type: {envelope.event_type}"
                 )
@@ -187,14 +185,14 @@ class QueueConsumer:
                 await self.resume()
 
             except EnvelopeProcessingError as e:
-                logger.exception(
+                logger.error(
                     f"Error while processing message; message: {e.message}"
                     f"message_id:{envelope.message_id} | event_type: {envelope.event_type}"
                 )
                 await msg.reject(requeue=e.requeue)
 
             except Exception:
-                logger.exception(
+                logger.error(
                     f"Error while processing message; sending to DLQ\n"
                     f"message_id:{envelope.message_id} | event_type: {envelope.event_type}"
                 )
