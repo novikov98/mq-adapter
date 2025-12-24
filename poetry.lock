@@ -135,14 +135,14 @@ uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
 name = "bx-client"
-version = "0.4.2"
+version = "0.4.3"
 description = "Клиент для взаимодействя с REST API Битрикс24."
 optional = false
 python-versions = ">=3.13"
 groups = ["main"]
 files = [
-    {file = "bx_client-0.4.2-py3-none-any.whl", hash = "sha256:03877a28f3c826cd7199b44b57c4be6cb1b24bca5da6e249f24fe54906c36e2a"},
-    {file = "bx_client-0.4.2.tar.gz", hash = "sha256:4bd05af1a5570371b8ac617a532313f1391b1b0ea1e9c350edb1da695c38ecb7"},
+    {file = "bx_client-0.4.3-py3-none-any.whl", hash = "sha256:3cb74e0efaae6e99777172af74c8f8442f803d2d75fe5271c9a4d19894fbf654"},
+    {file = "bx_client-0.4.3.tar.gz", hash = "sha256:0520dd0db7e11507323501d111250268aa2bb0c0741e6418580b7520148e4d30"},
 ]
 
 [package.dependencies]
@@ -1340,4 +1340,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<4.0"
-content-hash = "3585e85b39d374a5a314d962e60867df2ccada0da4b9d76b01320bf7b581562e"
+content-hash = "d58bba5cd9350f7804f434899c961ffc95523afacb439a63f92033f1d001986c"
