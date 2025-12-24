@@ -1,8 +1,8 @@
 from logging import getLogger
 from typing import Type
 
-from bx_client.bitrix import BitrixAsync
-from bx_client.exceptions import BitrixAPIException
+from bx_client import BitrixAsync
+from bx_client.exceptions import BitrixServerError, BitrixInvalidRequestError
 
 from src.consumers.dto.absence import AbsenceDTO
 from src.consumers.dto.vacation import VacationPayloadDTO
@@ -40,12 +40,22 @@ class VacationService:
                 start_date=vacation.start_date,
                 end_date=vacation.end_date,
             )
-            vacation = await self.absence_repo.add(absence)
+            await self.absence_repo.add(absence)
 
-        except BitrixAPIException as e:
-            logger.exception(
+        except BitrixInvalidRequestError as e:
+            logger.error(
                 f"Bitrix API error\n"
                 f"error: {e.bitrix_error.error}\n"
                 f"description: {e.bitrix_error.error_description}\n"
             )
+            raise
+        except BitrixServerError as e:
+            logger.error(
+                f"Bitrix server error\n"
+                f"error: {e.bitrix_error.error}\n"
+                f"description: {e.bitrix_error.description}\n"
+            )
+            raise
+        except Exception as e:
+            logger.error(f"Bitrix unknown error. {str(e)}")
             raise

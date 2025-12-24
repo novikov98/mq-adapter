@@ -24,4 +24,4 @@ class AbsenceRepository:
             absence = AbsenceDetailDTO(**result)
             return absence
         except Exception:
-            return None
+            raise
