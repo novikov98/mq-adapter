@@ -49,6 +49,8 @@ class BitrixAvailabilityGuard:
         # TODO: Подумать получше. Не нравится что принимаем как падение битрикса любую ошибку
         except Exception as e:
             logger.fatal(e)
+            if self.is_alive:
+                await self.mark_down()
             raise BitrixTemporaryUnavailableError
 
     async def wait_until_up(self):

@@ -178,9 +178,9 @@ class QueueConsumer:
                     f"Bitrix temporary unavailable. Requeue message and pause consumer.\n"
                     f"message_id:{envelope.message_id} | event_type: {envelope.event_type}"
                 )
-                await msg.reject(requeue=True)
 
                 await self.pause()
+                await msg.reject(requeue=True)
                 await self.bitrix_availability_guard.wait_until_up()
                 await self.resume()
 

@@ -5,7 +5,6 @@ from bx_client.exceptions import BitrixServerError, BitrixInvalidRequestError
 from src.consumers.repositoryes import AbsenceRepository, EmployeeRepository
 from src.consumers.services.vacation import VacationService
 from src.core.bitrix.client import BitrixClient
-from src.core.bitrix.exceptions import BitrixTemporaryUnavailableError
 from src.core.rabbit.dto import Envelope
 from src.core.rabbit.envelope_router import EnvelopeRouter
 from src.consumers.dto.vacation import VacationPayloadDTO
@@ -24,10 +23,8 @@ async def upsert(envelope: Envelope):
 
     except BitrixServerError:
         await BitrixClient.bitrix_availability_guard.health_chek()
+        raise EnvelopeProcessingError(requeue=False)
     except BitrixInvalidRequestError:
         raise EnvelopeProcessingError(requeue=False)
-    except BitrixTemporaryUnavailableError:
-        await BitrixClient.bitrix_availability_guard.mark_down()
-        raise
     except Exception:
         raise EnvelopeProcessingError(requeue=False)
