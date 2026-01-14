@@ -186,7 +186,7 @@ class QueueConsumer:
 
             except EnvelopeProcessingError as e:
                 logger.error(
-                    f"Error while processing message; message: {e.message}"
+                    f"Error while processing message; message: {e.message}; requeue={e.requeue}"
                     f"message_id:{envelope.message_id} | event_type: {envelope.event_type}"
                 )
                 await msg.reject(requeue=e.requeue)

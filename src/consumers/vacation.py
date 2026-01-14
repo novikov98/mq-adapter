@@ -4,9 +4,9 @@ from src.core.rabbit.dto import QueueConfig
 
 
 config = QueueConfig(
-    queue_name="vacation",
+    queue_name="bitrix.hr.vacation",
     exchange_name="hr.events",
-    binding_key="bitrix.hr.vacation",
+    binding_key="hr.vacation.*",
     dlx_name="hr.dlq",
     dlx_routing_key="bitrix.hr.vacation.dlq",
     prefetch_count=1,
