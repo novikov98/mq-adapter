@@ -8,7 +8,7 @@ config = QueueConfig(
     exchange_name="hr.events",
     binding_key="hr.vacation.*",
     dlx_name="hr.dlq",
-    dlx_routing_key="bitrix.hr.vacation.dlq",
+    dlx_routing_key="hr.vacation.dlq",
     prefetch_count=1,
 )
 
