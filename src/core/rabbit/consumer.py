@@ -151,10 +151,7 @@ class QueueConsumer:
 
             # Неверная структура пакета
             except (json.JSONDecodeError, ValidationError) as e:
-                logger.error(
-                    f"Invalid message format; sending to DLQ\n"
-                    f"message_id:{envelope.message_id} | event_type: {envelope.event_type}"
-                )
+                logger.error("Invalid message format; sending to DLQ")
                 msg = self.add_dlq_headers(msg, e, "Invalid message format")
                 await msg.reject(requeue=False)
 
@@ -211,12 +208,13 @@ class QueueConsumer:
     def build_pipeline(self) -> MiddlewareCallable:
         next_callable = self.router.dispatch
 
-        for middel_ware in reversed(self.middlewares):
-            current_next = next_callable
+        if self.middlewares:
+            for middel_ware in reversed(self.middlewares):
+                current_next = next_callable
 
-            async def wrapped(envelope: Envelope, mw=middel_ware, call_next=current_next):
-                await mw.dispatch(envelope, call_next)
+                async def wrapped(envelope: Envelope, mw=middel_ware, call_next=current_next):
+                    await mw.dispatch(envelope, call_next)
 
-            next_callable = wrapped
+                next_callable = wrapped
 
         return next_callable
