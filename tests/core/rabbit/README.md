@@ -65,3 +65,4 @@ pytest tests/core/rabbit/ --cov=src/core/rabbit
 - Наследование и структура исключений
 - Параметры исключений
 
+

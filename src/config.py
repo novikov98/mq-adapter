@@ -1,8 +1,8 @@
 from logging.config import dictConfig
 from pathlib import Path
-from typing import ClassVar, List
+from typing import List
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import BaseModel
 
 from src.utils.log_filter import MaskTokenFilter
@@ -16,10 +16,11 @@ class BaseConfig(BaseSettings):
     Базовый класс для настроек приложения с общей конфигурацией
     """
 
-    class Config:
-        env_file: ClassVar[str] = str(BASE_DIR / ".env")
-        env_file_encoding: ClassVar[str] = "utf-8"
-        extra: ClassVar[str] = "allow"
+    model_config = SettingsConfigDict(
+        env_file=str(BASE_DIR / ".env"),
+        env_file_encoding="utf-8",
+        extra="allow",
+    )
 
 
 class LoggConfig(BaseConfig):
