@@ -16,11 +16,8 @@ ABSENCE_TYPES = Literal[
 
 
 class AbsenceDTO(BaseModel):
+    uuid: str
     user_id: int
     absence_type: ABSENCE_TYPES
     start_date: datetime
     end_date: datetime
-
-
-class AbsenceDetailDTO(AbsenceDTO):
-    id: int

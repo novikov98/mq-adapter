@@ -29,18 +29,28 @@ class VacationService:
         self.employee_repo = employee_repo(self.bx)
         self.absence_repo = absence_repo(self.bx)
 
-    async def add_vacation(self, vacation: VacationPayloadDTO):
+    async def upsert_vacation(self, vacation: VacationPayloadDTO):
         try:
+            # Получаем сотрудника
             employee = await self.employee_repo.get_by_email(vacation.employee_email)
             if not employee:
                 raise EnvelopeProcessingError("Employee not found", requeue=False)
-            absence = AbsenceDTO(
-                user_id=employee.ID,
-                absence_type="VACATION",
-                start_date=vacation.start_date,
-                end_date=vacation.end_date,
-            )
-            await self.absence_repo.add(absence)
+
+            absence = await self.absence_repo.get(vacation.vacation_id)
+            if absence:
+                absence.user_id = employee.ID
+                absence.start_date = vacation.start_date
+                absence.end_date = vacation.end_date
+                await self.absence_repo.update(absence)
+            else:
+                absence = AbsenceDTO(
+                    uuid=vacation.vacation_id,
+                    user_id=employee.ID,
+                    absence_type="VACATION",
+                    start_date=vacation.start_date,
+                    end_date=vacation.end_date,
+                )
+                await self.absence_repo.add(absence)
 
         except BitrixInvalidRequestError as e:
             logger.debug(

@@ -19,7 +19,7 @@ async def upsert(envelope: Envelope):
     try:
         service = VacationService(bx=BitrixClient.bx, employee_repo=EmployeeRepository, absence_repo=AbsenceRepository)
         vacation = VacationPayloadDTO(**envelope.payload)
-        await service.add_vacation(vacation)
+        await service.upsert_vacation(vacation)
 
     except BitrixServerError:
         await BitrixClient.bitrix_availability_guard.health_chek()
