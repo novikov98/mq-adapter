@@ -1,12 +1,18 @@
+# IDE / tooling
 .idea
+.vscode
 coverage
+.pytest_cache
+.mypy_cache
 
+# VCS / CI
 .git
 .gitignore
 .gitmodules
 .gitlab-ci.yml
 
-log/**/*
+# Логи и временные
+log/*
 !log/.gitkeep
 
 tmp/**/*
@@ -15,9 +21,17 @@ tmp/**/*
 !tmp/sessions/.gitkeep
 !tmp/sockets/.gitkeep
 
+# Docker
 docker
-Dockerfile
 docker-compose.*
+
+# Env
+.env
 env.*
 !env.test
 /packages/
+
+# Python
+__pycache__
+*.py[cod]
+*.pyo
