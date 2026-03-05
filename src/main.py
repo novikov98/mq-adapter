@@ -38,7 +38,7 @@ async def lifespan():
     await rabbit.start()
 
     try:
-        yield rabbit
+        yield
     finally:
 
         await rabbit.close()
