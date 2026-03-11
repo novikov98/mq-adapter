@@ -117,6 +117,7 @@ class RedisConfig(BaseConfig):
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
     REDIS_DB: int = 0
+    REDIS_PASSWORD: str = None
 
     REDIS_ENVELOPE_PROCESSING_TTL: int = 0
     REDIS_ENVELOPE_PROCESSED_TTL: int = 0

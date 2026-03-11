@@ -21,6 +21,7 @@ class RedisClient:
             )
             cls.redis_client = sentinel.master_for(
                 service_name=config.redis_config.REDIS_MASTER_NAME,
+                password=config.redis_config.REDIS_PASSWORD,
                 db=config.redis_config.REDIS_DB,
                 decode_responses=True,
             )
@@ -30,6 +31,7 @@ class RedisClient:
             cls.redis_client = Redis(
                 host=config.redis_config.REDIS_HOST,
                 port=config.redis_config.REDIS_PORT,
+                password=config.redis_config.REDIS_PASSWORD,
                 db=config.redis_config.REDIS_DB,
                 decode_responses=True,
             )
