@@ -12,6 +12,7 @@ class QueueConfig(BaseModel):
     exchange_type: Literal["fanout", "topic", "direct"] = "topic"
     durable: bool = True
     auto_delete: bool = False
+    dlq_name: str
     dlx_name: str
     dlx_routing_key: str
     prefetch_count: int

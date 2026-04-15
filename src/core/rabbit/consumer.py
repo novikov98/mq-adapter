@@ -4,7 +4,7 @@ from logging import getLogger
 from typing import Callable, Awaitable
 
 import aio_pika
-from aio_pika.abc import AbstractIncomingMessage
+from aio_pika.abc import AbstractIncomingMessage, AbstractRobustQueue
 from pydantic import ValidationError
 
 from src.core.bitrix.availabilit_guard import BitrixAvailabilityGuard
@@ -45,7 +45,7 @@ class QueueConsumer:
         self.router: EnvelopeRouter = router
         self.queue_config = queue_config
         self.channel: aio_pika.RobustChannel | None = None
-        self.queue: aio_pika.RobustQueue | None = None
+        self.queue: AbstractRobustQueue | None = None
         self.consumer_tag: str | None = None
         self.bitrix_availability_guard: BitrixAvailabilityGuard = bitrix_availability_guard
         self.middlewares: list[AbstractMiddleware] | None = middlewares
@@ -65,6 +65,23 @@ class QueueConsumer:
         # Открываем канал
         self.channel = await connection.channel()
         await self.channel.set_qos(prefetch_count=self.queue_config.prefetch_count)
+
+        # DLX
+        dlx_exchange = await self.channel.declare_exchange(
+            self.queue_config.dlx_name,
+            aio_pika.ExchangeType.DIRECT,
+            durable=True,
+        )
+
+        dlq = await self.channel.declare_queue(
+            self.queue_config.dlq_name,
+            durable=True,
+        )
+
+        await dlq.bind(
+            dlx_exchange,
+            routing_key=self.queue_config.dlx_routing_key or self.queue_config.queue_name,
+        )
 
         # Объявляем exchange
         exchange = await self.channel.declare_exchange(
@@ -183,7 +200,7 @@ class QueueConsumer:
 
             except EnvelopeProcessingError as e:
                 logger.error(
-                    f"Error while processing message; message: {e.message}; requeue={e.requeue}"
+                    f"Error while processing message; message: {e.message}; requeue={e.requeue}.\n"
                     f"message_id:{envelope.message_id} | event_type: {envelope.event_type}"
                 )
                 await msg.reject(requeue=e.requeue)

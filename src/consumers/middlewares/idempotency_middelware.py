@@ -44,12 +44,12 @@ class IdempotencyMiddleware(AbstractMiddleware):
         # Передаем сообщение дальше
         try:
             await call_next(envelope)
-        except Exception:
+        except Exception as e:
             # Ошибка: снимаем лок, чтобы сообщение могли обработать повторно
             # после reject(requeue=True) или переотправки из DLQ.
             logger.error(f"error during processing message_id: {message_id}, removing lock")
             await self.redis.delete(key)
-            raise
+            raise e
         else:
             # Успешная обработка: обновляем TTL,
             # чтобы дубликаты этого message_id игнорировались ещё ttl секунд.
