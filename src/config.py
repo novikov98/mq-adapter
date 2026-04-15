@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import List
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import BaseModel
 
 from src.utils.log_filter import MaskTokenFilter
 
@@ -117,7 +116,7 @@ class RedisConfig(BaseConfig):
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
     REDIS_DB: int = 0
-    REDIS_PASSWORD: str = None
+    REDIS_PASSWORD: str = ""
 
     REDIS_ENVELOPE_PROCESSING_TTL: int = 0
     REDIS_ENVELOPE_PROCESSED_TTL: int = 0
@@ -127,7 +126,7 @@ class RedisConfig(BaseConfig):
         return [tuple(addr.split(":")) for addr in self.REDIS_SENTINELS.split(",")]
 
 
-class Config(BaseModel):
+class Config:
     """
     Общий конфиг.
     """
