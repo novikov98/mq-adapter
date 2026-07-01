@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from logging import getLogger
 from typing import Callable, Awaitable
+from base64 import b64decode
 
 import aio_pika
 from aio_pika.abc import AbstractIncomingMessage, AbstractRobustQueue
@@ -24,6 +25,7 @@ logger = getLogger(__name__)
 
 DLQ_ERRORS = EnvelopeHandlerNotRegisteredError
 MiddlewareCallable = Callable[[Envelope], Awaitable[None]]
+_JSON_DECODER = json.JSONDecoder()
 
 
 class QueueConsumer:
@@ -157,7 +159,12 @@ class QueueConsumer:
 
         async with msg.process(ignore_processed=True):  # ignore_processed=True Сами контролируем ack/nack/reject.
             try:
-                data = json.loads(msg.body)
+                source_system = msg.headers.get("source_system")
+                logger.debug(source_system)
+                if source_system == "1S":
+                    data = self._extract_json(msg.body)
+                else:
+                    data = json.loads(msg.body)
                 envelope = Envelope(**data)
 
                 pipeline = self.build_pipeline()
@@ -211,6 +218,31 @@ class QueueConsumer:
                     f"message_id:{envelope.message_id} | event_type: {envelope.event_type}"
                 )
                 await msg.reject(requeue=False)
+
+    def _extract_json(self, body):
+        """
+        Достаёт JSON из тела сообщения 1С-шины.
+        Если JSON достать не получается, отдает body как есть.
+        """
+        try:
+            frame = b64decode(body)
+            logger.debug(f"frame: {frame}")
+        except Exception:
+            logger.error("Не удалось декодировать base64")
+            return body
+
+        pos = 0
+        while True:
+            start = frame.find(b"{", pos)  # начало JSON
+            if start == -1:
+                logger.debug("не нашли JSON")
+                return body
+            try:
+                obj, _ = _JSON_DECODER.raw_decode(frame[start:].decode("utf-8"))
+                logger.debug(obj)
+                return obj
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                pos = start + 1  # скобку нашли, но это не начато JSON
 
     def add_dlq_headers(
         self, msg: AbstractIncomingMessage, exception: Exception, message: str
