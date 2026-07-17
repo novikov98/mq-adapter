@@ -2,7 +2,6 @@ import json
 from datetime import datetime
 from logging import getLogger
 from typing import Callable, Awaitable
-from base64 import b64decode
 
 import aio_pika
 from aio_pika.abc import AbstractIncomingMessage, AbstractRobustQueue
@@ -219,30 +218,62 @@ class QueueConsumer:
                 )
                 await msg.reject(requeue=False)
 
-    def _extract_json(self, body):
+    def _extract_json(self, body: bytes) -> dict:
         """
         Достаёт JSON из тела сообщения 1С-шины.
-        Если JSON достать не получается, отдает body как есть.
+        Бросает JSONDecodeError, если распарсить не удалось.
         """
-        try:
-            frame = b64decode(body)
-            logger.debug(f"frame: {frame}")
-        except Exception:
-            logger.error("Не удалось декодировать base64")
-            return body
+        section = self._unwrap_amqp_body_section(body)
+        if section is not None:
+            try:
+                return json.loads(section)
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                logger.warning("Секция AMQP развернулась, но JSON не распарсился; ищем JSON по всему телу")
 
+        return self._scan_json(body)
+
+    @staticmethod
+    def _unwrap_amqp_body_section(body: bytes) -> bytes | None:
+        """
+        Разворачивает body-секцию AMQP 1.0, в которую шина заворачивает JSON:
+        дескриптор 00 53 <75 data|77 amqp-value>, затем binary/string с длиной.
+        Отдаёт None, если тело не похоже на такую секцию.
+        """
+        if len(body) < 5 or body[0] != 0x00 or body[1] != 0x53 or body[2] not in (0x75, 0x77):
+            return None
+
+        constructor = body[3]
+        if constructor in (0xA0, 0xA1):  # vbin8 / str8-utf8 — длина в 1 байте
+            size, start = body[4], 5
+        elif constructor in (0xB0, 0xB1):  # vbin32 / str32-utf8 — длина в 4 байтах
+            if len(body) < 8:
+                return None
+            size, start = int.from_bytes(body[4:8], "big"), 8
+        else:
+            return None
+
+        if start + size > len(body):
+            logger.warning(f"Длина секции ({size}) больше остатка тела ({len(body) - start})")
+            return None
+
+        return body[start : start + size]
+
+    @staticmethod
+    def _scan_json(body: bytes) -> dict:
+        """
+        Фолбэк: ищет первый байт, с которого тело парсится как JSON-объект.
+        """
         pos = 0
         while True:
-            start = frame.find(b"{", pos)  # начало JSON
+            start = body.find(b"{", pos)  # начало JSON
             if start == -1:
-                logger.debug("не нашли JSON")
-                return body
+                logger.error(f"не нашли JSON; тело: {body[:64]!r}")
+                raise json.JSONDecodeError("JSON не найден в теле сообщения", body.decode("utf-8", "replace"), 0)
             try:
-                obj, _ = _JSON_DECODER.raw_decode(frame[start:].decode("utf-8"))
-                logger.debug(obj)
+                obj, _ = _JSON_DECODER.raw_decode(body[start:].decode("utf-8", "replace"))
                 return obj
-            except (UnicodeDecodeError, json.JSONDecodeError):
-                pos = start + 1  # скобку нашли, но это не начато JSON
+            except json.JSONDecodeError:
+                pos = start + 1  # скобку нашли, но это не начало JSON
 
     def add_dlq_headers(
         self, msg: AbstractIncomingMessage, exception: Exception, message: str
